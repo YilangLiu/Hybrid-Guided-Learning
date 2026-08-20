@@ -1,0 +1,111 @@
+# Torque-level variant of the Go2 single-front-leg handstand env.
+# Same obs / termination contract as go2_single_handstand.yaml; actions
+# are direct joint torques (tanh action ∈ (-1, 1) maps to
+# ± torque_limit_scale × the MJCF actuator limits — 23.7 N·m
+# hips/thighs, 45.43 N·m calves). No PD loop; the MJCF's passive joint
+# damping and friction loss remain. Reward differs from the position
+# recipe in action_rate and orientation (see reward_scales).
+
+env_cfg:
+  xml_path: hybrid_guided_learning/assets/unitree_go2/go2_genesis.xml
+  ctrl_dt: 0.004
+  substeps: 1
+  num_actions: 12
+  control_mode: torque
+  torque_limit_scale: 1.0
+  # Which front leg supports the body. The OTHER front leg is lifted.
+  support_leg: FR
+  default_joint_angles:
+    FL_hip_joint: 0.0
+    FR_hip_joint: 0.0
+    RL_hip_joint: 0.0
+    RR_hip_joint: 0.0
+    FL_thigh_joint: 0.8
+    FR_thigh_joint: 0.8
+    RL_thigh_joint: 1.0
+    RR_thigh_joint: 1.0
+    FL_calf_joint: -1.5
+    FR_calf_joint: -1.5
+    RL_calf_joint: -1.5
+    RR_calf_joint: -1.5
+  joint_names:
+    - FR_hip_joint
+    - FR_thigh_joint
+    - FR_calf_joint
+    - FL_hip_joint
+    - FL_thigh_joint
+    - FL_calf_joint
+    - RR_hip_joint
+    - RR_thigh_joint
+    - RR_calf_joint
+    - RL_hip_joint
+    - RL_thigh_joint
+    - RL_calf_joint
+  termination_if_roll_greater_than: 360
+  termination_if_pitch_greater_than: 360
+  base_init_pos: [0.0, 0.0, 0.42]
+  base_init_quat: [1.0, 0.0, 0.0, 0.0]
+  episode_length_s: 4.0
+  resampling_time_s: 4.0
+  simulate_action_latency: false
+  clip_actions: 1.0  # torque commands are meaningless beyond ±limit
+
+obs_cfg:
+  obs_scales:
+    lin_vel: 2.0
+    ang_vel: 0.25
+    dof_pos: 1.0
+    dof_vel: 0.05
+  noise_level: 1.0
+  noise_scales:
+    joint_pos: 0.01
+    joint_vel: 1.5
+    gyro: 0.2
+    gravity: 0.05
+    linvel: 0.1
+
+reward_cfg:
+  # Lower target height than the two-leg handstand: with one supporting
+  # front leg the IMU site sits noticeably lower.
+  height_target: 0.50
+  desired_forward_vec: [0.0, 0.0, -1.0]
+  upvector_termination_threshold: -0.25
+  contact_force_threshold: 1.0
+  # Hard-termination links: same as the position-mode env (front calves
+  # intentionally omitted — foot-tip force lives on *_foot links).
+  unwanted_contact_links:
+    - base
+    - FL_thigh
+    - FR_thigh
+    - FL_hip
+    - FR_hip
+    - RL_thigh
+    - RR_thigh
+    - RL_hip
+    - RR_hip
+  # Stage-A recipe with two torque-mode adjustments:
+  #   action_rate -3.0: no PD filtering here — without smoothness
+  #     pressure the policy amplifies obs noise into torque chatter.
+  #   orientation 1.5: counters the shallow-pose attractor of
+  #     torque-space exploration (deep-pose candidates fall within the
+  #     credit horizon; in position mode the PD keeps them alive).
+  reward_scales:
+    handstand_height: 5.0
+    orientation: 1.5
+    contact: -0.2
+    lifted_foot_height: 1.0
+    com_over_support: 1.5
+    pose: -0.1
+    dof_acc: -2.5e-7
+    energy: -0.003
+    action_rate: -3.0
+    torques: 0.0
+    termination: 0.0
+    stay_still: -0.3
+    dof_pos_limits: -0.5
+
+command_cfg:
+  num_commands: 3
+  lin_vel_x_range: [0.0, 0.0]
+  lin_vel_y_range: [0.0, 0.0]
+  ang_vel_range: [0.0, 0.0]

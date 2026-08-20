@@ -1,0 +1,9 @@
+# Torque-level PPO for the Go2 single-front-leg handstand.
+# Uses the torque env config (cfgs/env/go2_single_handstand_torque.yaml,
+# including the action_rate -3.0 / orientation 1.5 shaping) and the tuned
+# handstand PPO agent config. Sweep gamma/seed via scripts/train.py
+# --gamma / --seed / --exp_name overrides.
+exp_name: go2_single_handstand_ppo_torque
+env_name: genesis_go2_single_handstand   # registered in rl_games_integration/register.py
+env: go2_single_handstand_torque.yaml    # resolved against cfgs/env/
+agent: ppo_handstand.yaml                # reuses the tuned handstand PPO config

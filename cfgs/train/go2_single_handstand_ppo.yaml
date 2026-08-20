@@ -1,0 +1,5 @@
+# Top-level training config for the Go2 single-front-leg handstand task.
+exp_name: go2_single_handstand
+env_name: genesis_go2_single_handstand   # registered in rl_games_integration/register.py
+env: go2_single_handstand.yaml           # resolved against cfgs/env/
+agent: ppo_handstand.yaml                # reuses the tuned handstand PPO config

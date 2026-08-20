@@ -1,0 +1,90 @@
+# PPO config tuned for the Go2 handstand task. Largely mirrors ppo.yaml;
+# differences are commented inline.
+params:
+  seed: 42
+  algo:
+    name: a2c_continuous
+  model:
+    name: continuous_a2c_logstd
+  network:
+    name: actor_critic
+    separate: False
+    space:
+      continuous:
+        mu_activation: None
+        sigma_activation: None
+        mu_init:
+          name: default
+        sigma_init:
+          name: const_initializer
+          val: 0
+        fixed_sigma: True
+    mlp:
+      units: [512, 256, 128]
+      activation: elu
+      initializer:
+        name: default
+  config:
+    ppo: True
+    normalize_input: True
+    normalize_value: True
+    value_bootstrap: True
+    reward_shaper:
+      scale_value: 1.0
+    normalize_advantage: True
+    # ---- Aligned with mujoco_playground brax PPO defaults for Go2Handstand
+    # (see externals/mujoco_playground/.../config/locomotion_params.py:106).
+    # The reference reaches handstand in ~400M timesteps; the prior settings
+    # (gamma 0.99, lr 1e-3 adaptive, 4 minibatches, critic_coef 2) gave PPO
+    # 6x fewer gradient steps per rollout and an unstable LR schedule.
+    gamma: 0.99                 # was 0.99 — matches brax PPO default
+    tau: 0.95
+    learning_rate: 3.0e-4       # was 1e-3 — matches brax PPO default (decimal form so PyYAML parses as float, not str)
+    lr_schedule: adaptive
+    lr_threshold: 0.008
+    kl_threshold: 0.008
+    grad_norm: 1.0
+    entropy_coef: 0.01          # was 0.02 — matches brax PPO default
+    truncate_grads: True
+    e_clip: 0.3                 # was 0.2 — matches brax PPO default
+    clip_value: True            # was False — matches brax PPO default
+    # 8192 envs × 20 unroll = 163,840 transitions per data batch.
+    # 32 minibatches × 4 mini_epochs = 128 gradient steps per rollout
+    # (vs prior 4 × 5 = 20, i.e. 6x less learning per batch).
+    num_actors: 8192            # was 4096
+    horizon_length: 20          # was 24 — matches brax `unroll_length`
+    minibatch_size: 5120        # 8192*20/32 = 32 minibatches per rollout
+    mini_epochs: 4              # was 5 — matches brax `num_updates_per_batch`
+    critic_coef: 4              # was 2 — matches brax PPO default
+    use_smooth_clamp: True
+    bound_loss_type: regularisation
+    bounds_loss_coef: 0.0
+    device: cuda:0
+    torch_compile: False
+    max_epochs: 2500
+    save_frequency: 200
+    save_best_after: 100
+    # Asymmetric actor/critic — the env exposes a privileged `critic` obs
+    # (clean signals + joint torques + torso height) that the value net
+    # consumes via this block. The actor still sees only the noisy 45-D
+    # policy obs.
+    central_value_config:
+      minibatch_size: 5120
+      mini_epochs: 4
+      learning_rate: 3.0e-4
+      clip_value: True
+      normalize_input: True
+      truncate_grads: True
+      network:
+        name: actor_critic
+        central_value: True
+        mlp:
+          units: [512, 256, 128]
+          activation: elu
+          initializer:
+            name: default
+    player:
+      use_vecenv: True
+      render: False
+      games_num: 2
+      deterministic: True

@@ -1,0 +1,83 @@
+# ============================================================
+# Hybrid-Guided-Learning .gitignore
+# ============================================================
+
+# --- Externals (large vendored checkouts; clone separately, see README §2) ---
+externals/
+
+# --- Training outputs ---
+runs/
+wandb/
+tb_logs/
+logs/
+outputs/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.tfevents.*
+
+# --- Editor / tooling local config ---
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtual envs (root-anchored: bare env/ would match cfgs/env/) ---
+/venv/
+/env/
+/.venv/
+/.env
+
+# --- Notebooks ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- pytest / coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# --- Type checkers / linters ---
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pyright/
+.ruff_cache/
+
+# --- OS-level junk ---
+Thumbs.db
+ehthumbs.db
+
+# --- Project-specific scratch ---
+/tmp/
+scratch/
+sandbox/

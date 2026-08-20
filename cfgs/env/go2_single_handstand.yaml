@@ -1,0 +1,118 @@
+# Go2 single-front-leg handstand env config (forwarded to SingleHandstand).
+# Mirrors mujoco_playground's single_handstand_config:
+#   externals/mujoco_playground/.../locomotion/go2/handstand.py:SingleHandstand
+#
+# Diffs vs cfgs/env/go2_handstand.yaml:
+#   * env_cfg.support_leg: "FR" or "FL" — picks the supporting front leg.
+#   * reward_cfg.height_target -> 0.50 (lower than two-front-leg 0.55).
+#   * reward_cfg.contact -> -0.2 (penalize lifted/rear feet touching floor).
+#   * Two new reward terms: lifted_foot_height, com_over_support.
+# Notes:
+#   * pose_joint_ids and off_ground_feet are OMITTED here on purpose —
+#     SingleHandstand.__init__ derives them from support_leg and injects
+#     them as defaults; explicit YAML values would override that.
+
+env_cfg:
+  xml_path: hybrid_guided_learning/assets/unitree_go2/go2_genesis.xml
+  ctrl_dt: 0.004
+  substeps: 1
+  num_actions: 12
+  # Which front leg supports the body. The OTHER front leg is lifted.
+  support_leg: FR
+  default_joint_angles:
+    FL_hip_joint: 0.0
+    FR_hip_joint: 0.0
+    RL_hip_joint: 0.0
+    RR_hip_joint: 0.0
+    FL_thigh_joint: 0.8
+    FR_thigh_joint: 0.8
+    RL_thigh_joint: 1.0
+    RR_thigh_joint: 1.0
+    FL_calf_joint: -1.5
+    FR_calf_joint: -1.5
+    RL_calf_joint: -1.5
+    RR_calf_joint: -1.5
+  joint_names:
+    - FR_hip_joint
+    - FR_thigh_joint
+    - FR_calf_joint
+    - FL_hip_joint
+    - FL_thigh_joint
+    - FL_calf_joint
+    - RR_hip_joint
+    - RR_thigh_joint
+    - RR_calf_joint
+    - RL_hip_joint
+    - RL_thigh_joint
+    - RL_calf_joint
+  kp: 35.0
+  kd: 0.5
+  termination_if_roll_greater_than: 360
+  termination_if_pitch_greater_than: 360
+  base_init_pos: [0.0, 0.0, 0.42]
+  base_init_quat: [1.0, 0.0, 0.0, 0.0]
+  episode_length_s: 4.0
+  resampling_time_s: 4.0
+  action_scale: 0.3
+  simulate_action_latency: false
+  clip_actions: 100.0
+
+obs_cfg:
+  obs_scales:
+    lin_vel: 2.0
+    ang_vel: 0.25
+    dof_pos: 1.0
+    dof_vel: 0.05
+  noise_level: 1.0
+  noise_scales:
+    joint_pos: 0.01
+    joint_vel: 1.5
+    gyro: 0.2
+    gravity: 0.05
+    linvel: 0.1
+
+reward_cfg:
+  # Lower target height than the two-leg handstand: with one supporting
+  # front leg the IMU site sits noticeably lower.
+  height_target: 0.50
+  desired_forward_vec: [0.0, 0.0, -1.0]
+  upvector_termination_threshold: -0.25
+  contact_force_threshold: 1.0
+  # Hard-termination links: same as two-leg handstand. The support leg's
+  # foot bears the weight (front calves are intentionally OMITTED — Genesis
+  # collapses the foot-tip force onto *_foot, not *_calf, so this list
+  # already excludes the calves).
+  unwanted_contact_links:
+    - base
+    - FL_thigh
+    - FR_thigh
+    - FL_hip
+    - FR_hip
+    - RL_thigh
+    - RR_thigh
+    - RL_hip
+    - RR_hip
+  # Reward scales — match the MJX single_handstand_config:
+  #   contact: -0.2 (vs -0.1 for two-leg handstand)
+  #   lifted_foot_height: 1.0
+  #   com_over_support: 1.5
+  reward_scales:
+    handstand_height: 5.0
+    orientation: 1.0
+    contact: -0.2
+    lifted_foot_height: 1.0
+    com_over_support: 1.5
+    pose: -0.1
+    dof_acc: -2.5e-7
+    energy: -0.003
+    action_rate: 0.0
+    torques: 0.0
+    termination: 0.0
+    stay_still: -0.3
+    dof_pos_limits: -0.5
+
+command_cfg:
+  num_commands: 3
+  lin_vel_x_range: [0.0, 0.0]
+  lin_vel_y_range: [0.0, 0.0]
+  ang_vel_range: [0.0, 0.0]
